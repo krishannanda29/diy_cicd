@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_ca3afc97_d948_412c_821f_f3fd4f2bf735_Output_Variables_userID = Any
+

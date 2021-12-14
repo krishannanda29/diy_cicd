@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:customer-accounts="http://www.mulesoft.org/schema/mule/customer-accounts"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/customer-accounts http://www.mulesoft.org/schema/mule/customer-accounts/current/mule-customer-accounts.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="3d7e1bed-9673-429f-8a81-c710f714457c" file="config.yaml" />
+<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="fa3ada2c-0e65-4d3c-941d-71b39586398a" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d8c42547-1d3c-4119-8d23-9b2730085657" >
+		<http:request-connection host="${ws-host}" />
+
+	</http:request-config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="67edaa8f-9aa0-48f8-954a-e01e2094f41a" >
+		<vm:queues >
+			<vm:queue queueName="${queue-name}" />
+		</vm:queues>
+	</vm:config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="74ce6b6e-8c73-4cb9-9f0c-25cc624ed27f" >
+		<wsc:connection wsdlLocation="${soap_ws.wsdl}" service="${soap_ws.service}" port="${soap_ws.port}" address="${soap_ws.address}"/>
+	</wsc:config>
+	<customer-accounts:config name="Customer_Accounts_Config_Prac" doc:name="Customer Accounts Config" doc:id="3e76f92d-1a55-47e0-ab3d-18fe3c94e843" property_host="${accounts.host}" property_port="${accounts.port}" property_protocol="${accounts.protocol}" property_basePath="${accounts.basepath}" />
+	
+
+
+</mule>

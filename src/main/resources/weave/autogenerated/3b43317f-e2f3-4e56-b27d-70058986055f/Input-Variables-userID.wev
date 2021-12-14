@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_3b43317f_e2f3_4e56_b27d_70058986055f_Input_Variables_userID = Any
+

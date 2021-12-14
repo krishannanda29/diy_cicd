@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:customer-accounts="http://www.mulesoft.org/schema/mule/customer-accounts" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:accounts-api="http://www.mulesoft.org/schema/mule/accounts-api" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/accounts-api http://www.mulesoft.org/schema/mule/accounts-api/current/mule-accounts-api.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/customer-accounts http://www.mulesoft.org/schema/mule/customer-accounts/current/mule-customer-accounts.xsd">
+	<flow name="SetAccountsParams" doc:id="24d0498e-6290-4801-b077-4d6cc4093a90" >
+		<set-variable value="#[message.attributes.headers.id]" doc:name="Set RequestorName" doc:id="7d0432e9-d168-4f0e-aaec-c3efb233c089" variableName="userID"/>
+		<set-variable value="#[message.attributes.queryParams.acntTye default 'Business']" doc:name="Set AccountType" doc:id="4315aba6-2e9f-40d8-a5a2-9fcc6e73315f" variableName="acntType"/>
+		<set-variable value="#[message.attributes.queryParams.cname]" doc:name="Set AccountName" doc:id="2ccbadc4-fbec-481b-9711-f94e872474bb" variableName="cname"/>
+	</flow>
+	<sub-flow name="GetAccountsData" doc:id="c7ad4892-52ba-4291-8b2e-78ee423eeccf" >
+		<scatter-gather doc:name="Scatter-Gather" doc:id="aaf0d17f-00cb-4491-90c7-0df760c2d6fe" >
+			<route >
+				<customer-accounts:get-customer-accounts doc:name="Get customer accounts by AccountType" doc:id="6344df35-c78a-47e6-89b5-907e12f027dd" requestorname="#[vars.userID]" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" accounttype="#[vars.acntType]" config-ref="Customer_Accounts_Config_Prac"/>
+			</route>
+			<route >
+				<customer-accounts:get-customer-accounts doc:name="Get customer accounts by name" doc:id="b6044c3d-8388-4c41-9d50-e3a7352fb409" requestorname="#[vars.userID]" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" customername="#[vars.cname]" config-ref="Customer_Accounts_Config_Prac"/>
+			</route>
+		</scatter-gather>
+		<set-variable value="#[sizeOf(payload as Array)]" doc:name="countOfAccounts" doc:id="a652c010-4ece-4009-9a52-23642efd5c14" variableName="countOfAccounts"/>
+		<ee:transform doc:name="Transform Message" doc:id="5385c655-806e-4a57-aa74-ce8ce28c8b13" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<flow name="DataWeavePracFlow" doc:id="9073dbe8-371d-4ab7-b86c-6480b241259c" >
+		<http:listener doc:name="Listener" doc:id="f761140b-2546-455e-9eb7-94dc3cfa5a06" config-ref="HTTP_Listener_config" path="/dataWeavePrac">
+			<http:response >
+				<http:headers ><![CDATA[#[{
+	countOfAccounts: vars.countOfAccounts
+}]]]></http:headers>
+			</http:response>
+		</http:listener>
+		<flow-ref doc:name="SetAccountsParams" doc:id="bcae3c8b-81ae-49be-a16c-8b432021265a" name="SetAccountsParams"/>
+		<flow-ref doc:name="GetAccountsData" doc:id="3ed2656e-47f9-4708-9ca0-63fb1149984d" name="GetAccountsData"/>
+	</flow>
+</mule>

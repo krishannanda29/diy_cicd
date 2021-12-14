@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_38c665f8_2d9c_416d_ae50_28d368447488_Input_Variables_acntType = Any
+

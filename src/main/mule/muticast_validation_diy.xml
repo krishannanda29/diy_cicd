@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:customer-accounts="http://www.mulesoft.org/schema/mule/customer-accounts" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/customer-accounts http://www.mulesoft.org/schema/mule/customer-accounts/current/mule-customer-accounts.xsd">
+	<flow name="muticast_validation_diyFlow" doc:id="2e551968-84f9-40b5-8c42-64b73c2d8063" >
+		<http:listener doc:name="Listener" doc:id="f9df9fa9-a5c2-43f7-9549-ff4b426cf993" config-ref="HTTP_Listener_config" path="/conditionalAccounts"/>
+		<set-variable value="#[attributes.queryParams.condition]" doc:name="Set condition" doc:id="acc69bf7-17c7-485a-8350-65c829edc63d" variableName="condition"/>
+		<flow-ref doc:name="SetUserID_subFlow_diy" doc:id="2535886a-4d2f-432d-a8a4-1d201a10a0c2" name="SetUserID_subFlow_diy"/>
+		<flow-ref doc:name="SetCustomerName_subFlow_diy" doc:id="b51dd3ea-1c6f-4d7a-a2f2-7c81d83cbab8" name="SetCustomerName_subFlow_diy"/>
+		<flow-ref doc:name="SetAccountType_subFlow_diy" doc:id="b4883eb9-2e08-494b-a713-a668841f38b9" name="SetAccountType_subFlow_diy"/>
+		<validation:is-true doc:name="Is accntType business or personal" doc:id="21f4de7e-25b7-44bc-ae65-eaab50292fb7" expression="#[['business','personal'] contains vars.acntType]" message="Error Message - Account Type is not one of business or personal"/>
+		<validation:is-true doc:name="Condition is 'OR' or 'AND'" doc:id="d4b39643-0660-4878-b019-bd1e894a088b" expression="#[['OR','AND'] contains vars.condition]" message="Error Message - Condition is not 'OR' or 'AND'"/>
+		<choice doc:name="Choice" doc:id="8a763c8d-8acc-4f9c-9730-8cbe6d2cb8a1" >
+			<when expression="#[vars.condition == 'AND' or isEmpty(vars.cname)]">
+				<flow-ref doc:name="getAccntsByTypeAndName_diy" doc:id="c95ffe6d-cbb2-4062-8238-70a347980b92" name="getAccntsByTypeAndName_diy"/>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="getAccntsByTypeOrName_diy" doc:id="e2c3230f-f929-4cfa-a302-f6303389333f" name="getAccntsByTypeOrName_diy"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="getAccountsByName_diy" doc:id="db5c874c-4516-4475-95f6-843da9e4527e" >
+		<http:listener doc:name="Listener" doc:id="880ab4d3-f73c-4c71-804a-ce8674f401f5" config-ref="HTTP_Listener_config" path="/getAccountsInfoPrac/{id}" >
+			<http:response >
+				<http:headers ><![CDATA[#[{
+	"reqName" : vars.cname,
+	"requestID" : vars.userID,
+	"number_of_accnts": sizeOf(payload as Array)
+}]]]></http:headers>
+			</http:response>
+		</http:listener>
+		<http:request method="GET" doc:name="Request" doc:id="701c8ddb-ec0f-4e58-bd86-39f2b4936e23" config-ref="HTTP_Request_configuration" path="/accounts" sendCorrelationId="NEVER" >
+			<http:headers ><![CDATA[#[{	user_id : attributes.uriParams.'id',
+	client_id : "39100c46cff946b5868874321cb173c8",
+	client_secret : "ff038c1977E04804aC16bbE0Af89cf12"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	account_name : vars.cname
+}]]]></http:query-params>
+		</http:request>
+	</flow>
+	<sub-flow name="SetUserID_subFlow_diy" doc:id="5e8a9761-dee4-4e38-9a1c-31f213ed72f4" >
+		<set-variable value="#[attributes.headers.id]" doc:name="userID" doc:id="2ee17efc-3c56-4094-9d21-3fae01c79dba" variableName="userID" />
+	</sub-flow>
+	<sub-flow name="SetCustomerName_subFlow_diy" doc:id="e4d525d7-3ccb-4409-86a0-d06b2161e395" >
+		<set-variable value="#[message.attributes.queryParams.cname]" doc:name="customerName" doc:id="152fe4f9-5f35-4586-a99c-baf2df40fece" variableName="cname" />
+	</sub-flow>
+	<sub-flow name="SetAccountType_subFlow_diy" doc:id="9d4ff23d-1c70-42bb-82fa-b36c9c8ad431" >
+		<set-variable value='#[message.attributes.queryParams.acntType]' doc:name="accntType" doc:id="3171f7b7-a5d7-45c6-8628-5c190e510a73" variableName="acntType" />
+	</sub-flow>
+	<flow name="getAccntsByType_diy" doc:id="c8c44f1e-f1cf-4d46-825f-02dcc24bbd28" >
+		<http:listener doc:name="Listener" doc:id="e98a5770-7229-4fd3-b330-73dd9483d87f" config-ref="HTTP_Listener_config" path="/getAccountsInfoByTypePrac" >
+			<http:response >
+				<http:headers ><![CDATA[#[{
+	"userID" : vars.userID,
+	"account_type" : vars.acntType,
+	"number_of_accnts": sizeOf(payload as Array)
+}]]]></http:headers>
+			</http:response>
+		</http:listener>
+		<http:request method="GET" doc:name="Call Accounts WEB API" doc:id="4401531e-b309-4f21-ad4a-5eb9d178dfaa" config-ref="HTTP_Request_configuration" path="/accounts" sendCorrelationId="NEVER" >
+			<http:headers ><![CDATA[#[{	user_id : vars.userID,
+	client_id : "39100c46cff946b5868874321cb173c8",
+	client_secret : "ff038c1977E04804aC16bbE0Af89cf12"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	account_name : vars.acntType
+}]]]></http:query-params>
+		</http:request>
+	</flow>
+	<flow name="getAccntsByTypeAndName_diy" doc:id="fef1ccdc-3ec0-4835-9f53-d7d298b3935d" >
+		<http:listener doc:name="Listener" doc:id="d18972a3-9f2a-49a9-b9e1-de4ce6bc9d4c" config-ref="HTTP_Listener_config" path="/getAccountsInfoByTypeAndNamePrac" >
+			<http:response >
+				<http:headers ><![CDATA[#[{
+	"userID" : vars.userID,
+	"account_type" : vars.acntType,
+	"number_of_accnts": sizeOf(payload as Array)
+}]]]></http:headers>
+			</http:response>
+		</http:listener>
+		<customer-accounts:get-customer-accounts doc:name="Get customer accounts" doc:id="ec7a2fd6-7b3a-4d55-9135-9e86da67e78e" requestorname="#[vars.userID]" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" accounttype="#[vars.acntType]" customername="#[vars.cname]" config-ref="Customer_Accounts_Config_Prac"/>
+		<ee:transform doc:name="Transform Message" doc:id="29166bea-9061-4473-881d-fd9c9dee6654" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="bf76165c-37b4-4a78-9192-08212ea1803d" />
+	</flow>
+	<flow name="getAccntsByTypeOrName_diy" doc:id="c6b199ec-d1ce-4e7c-b6db-3dd5c31ede74" >
+		<http:listener doc:name="Listener" doc:id="8e8bc31f-bc33-4a39-b4d9-4d016a1bc01e" config-ref="HTTP_Listener_config" path="/getAccountsInfoByTypeOrNamePrac" >
+			<http:response >
+				<http:headers ><![CDATA[#[{
+	"userID" : vars.userID,
+	"account_type" : vars.acntType,
+	"number_of_accnts": sizeOf(payload as Array)
+}]]]></http:headers>
+			</http:response>
+		</http:listener>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="b676cdd1-c365-49cf-9b17-66201b3b589d" >
+			<route >
+				<customer-accounts:get-customer-accounts doc:name="Get customer accounts by Type" doc:id="1b8f1e9a-2be2-4ff4-9735-535c510bd5a0" requestorname="#[vars.userID]" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" accounttype="#[vars.acntType]" config-ref="Customer_Accounts_Config_Prac"/>
+			</route>
+			<route >
+				<customer-accounts:get-customer-accounts doc:name="Get customer accounts by Name" doc:id="45e9accf-cfff-403d-84ca-c96191d58fd5" requestorname="#[vars.userID]" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" customername="#[vars.cname]" config-ref="Customer_Accounts_Config_Prac"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="a2efac1d-025e-436c-9a11-90bcea1125e9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+%dw 2.0
+output application/java
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
