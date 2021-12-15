@@ -35,7 +35,7 @@
 						<muleVersion>4.3.0</muleVersion>
 						<username>krishannanda391</username>
 						<password>Friendship@1</password>
-						<applicationName>DIY_CICD_Sandbox_api</applicationName>
+						<applicationName>DIY_CICD_Sandbox</applicationName>
 						<environment>Sandbox</environment>
 						<region>us-east-1</region>
 						<workers>1</workers>
